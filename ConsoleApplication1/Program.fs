@@ -32,6 +32,16 @@ octalbtn.Location <- new Point(175, 450)
 let (^) l r = sprintf "%s%s" l r
 let int2String (x: int) = string x
 
+module String =
+    /// Converts a string into a list of characters.
+    let explode (s:string) =
+        let rec loop n acc =
+            if n = 0 then
+                acc
+            else
+                loop (n-1) (s.[n-1] :: acc)
+        loop s.Length []
+
 let hexButtonClicked evArgs sender =
     // make new form and populate
     let formcontrol = [for x in 0..4 -> x]
@@ -48,10 +58,13 @@ let hexButtonClicked evArgs sender =
 
     form.Controls.Add(hexlabel)
 
-    let hexBox = new TextBox(Width = 100, Height = 50, Location = new Point(225,500))
-    let hexLabel = new Label(Width = 100, Height = 50, Location = new Point(350,500))
-    hexLabel.Text <- "0"
+    let decBox = new TextBox(Width = 100, Height = 50, Location = new Point(175,415))
+    let decLabel = new Label(Width = 100, Height = 50, Location = new Point(300,415))
+    decLabel.Text <- "0"
 
+    let hexBox = new TextBox(Width = 100, Height = 50, Location = new Point(175,515))
+    let hexLabel = new Label(Width = 100, Height = 50, Location = new Point(300,515))
+    hexLabel.Text <- "0"
     
     let takeMod s = 
         match s with
@@ -62,64 +75,96 @@ let hexButtonClicked evArgs sender =
     | 11 -> "B"
     | 10 -> "A"
     | _ -> int2String s
-
     
+    let rec makehexarr list =
+        match list with
+    | [] -> []
+    | ['0'] -> [0.0]
+    | ['1'] -> [1.0]
+    | ['2'] -> [2.0]
+    | ['3'] -> [3.0]
+    | ['4'] -> [4.0]
+    | ['5'] -> [5.0]
+    | ['6'] -> [6.0]
+    | ['7'] -> [7.0]
+    | ['8'] -> [8.0]
+    | ['9'] -> [9.0]
+    | ['A'] -> [10.0]
+    | ['a'] -> [10.0]
+    | ['B'] -> [11.0]
+    | ['b'] -> [11.0]
+    | ['C'] -> [12.0]
+    | ['c'] -> [12.0]
+    | ['D'] -> [13.0]
+    | ['d'] -> [13.0]
+    | ['E'] -> [14.0]
+    | ['e'] -> [14.0]
+    | ['F'] -> [15.0]
+    | ['f'] -> [15.0]
+    | head::tail -> (makehexarr [head])@(makehexarr tail)
 
-    let rec hexconvert s = 
-        match s with 
+    let rec hexconvert list n =
+        match list with
+    | [] -> 0.0
+    | [x] -> ((x |> float)*(16.0**n))
+    | head::tail -> (hexconvert [head] n) + (hexconvert tail (n-1.0))
+
+    let rec hexsum list =
+        match list with
+    | [] -> 0.0
+    | [x] -> x
+    | head::tail -> head + (hexsum tail)
+
+    let rec decconvert s =
+        match s with
     | 0 -> ""
-    | _ -> hexconvert (s / 16) ^  (takeMod (s % 16))
+    | _ -> decconvert(s / 16) ^ takeMod (s % 16)
 
-    let subHexBtn = new Button(Width = 100, Height = 50, Location = new Point(225, 605), Text = "Dec -> Hex")
-    let subButtonClicked evArgs sender =
-        let convert = hexBox.Text |> int
-        hexLabel.Text <- hexconvert convert
+    let subDecBtn = new Button(Width = 100, Height = 50, Location = new Point(400, 400), Text = "Dec -> Hex")
+    let subDecButtonClicked evArgs sender =
+        let convert = decBox.Text |> int
+        let decresult = decconvert convert
+        decLabel.Text <- decresult |> string //output result
+        ()
     ()
 
-    subHexBtn.Click.Add(fun evArgs -> subButtonClicked evArgs hexbtn)
+    let subHexBtn = new Button(Width = 100, Height = 50, Location = new Point(400, 500), Text = "Hex -> Dec")
+    let subHexButtonClicked evArgs sender =
+        let convert = String.explode (hexBox.Text |> string) //String.explode splits string into list of chars
+        let hexarr = makehexarr convert //makes list of ints
+        let hexresult = hexconvert hexarr (hexarr.Length-1 |> float) //result of summation of powers of 16
+        hexLabel.Text <- hexresult |> string //output result
+        ()
+    ()
 
-    let hexBox2 = new TextBox(Width = 100, Height = 50, Location = new Point(225,550))
-    let hexLabel2 = new Label(Width = 100, Height = 50, Location = new Point(350,550))
-    hexLabel2.Text <- "0"
-
-    //let dropLast s l = s.Substring l
-
-    //let rec decconvert s l =
-    //    match s with
-    //| "" -> 1
-    //| "A" -> 10 + decconvert
-    //| "B" -> 11
-    //| "C" -> 12
-    //| "D" -> 
-    //|
-    //|
-
-    let subHexBtn2 = new Button(Width = 100, Height = 50, Location = new Point(345, 605), Text = "Hex -> Dec")
+    subHexBtn.Click.Add(fun evArgs -> subHexButtonClicked evArgs hexbtn)
+    subDecBtn.Click.Add(fun evArgs -> subDecButtonClicked evArgs hexbtn)
    
     form.Controls.Add(hexBox)
     form.Controls.Add(hexLabel)
-    form.Controls.Add(hexBox2)
-    form.Controls.Add(hexLabel2)
     form.Controls.Add(subHexBtn)
-    form.Controls.Add(subHexBtn2)
+    form.Controls.Add(decBox)
+    form.Controls.Add(decLabel)
+    form.Controls.Add(subDecBtn)
 
     ()
 
 let octalButtonClicked evArgs sender =
     let formcontrol = [for x in 0..4 -> x]
     let current = formcontrol.[0]
-    let form = new Form(Width = 750, Height = 750)
+    let form = new Form(Width = 650, Height = 650)
     form.Visible <- true
     form.Text <- "Octal lesson"
 
-    let octallabel = new Label(Width = 300, Height = 400, Location = new Point(225,0))
+    let octallabel = new Label(Width = 550, Height = 400, Location = new Point(50,25))
 
-    octallabel.Text <- "    Octal is another number system with less symbols to use than our conventional number system. \n
-    Octal is fancy for Base Eight meaning eight symbols are used to represent all the quantities. They are 0, 1, 2, 3, 4, 5, 6, and 7. \n
-    When we count up one from the 7, we need a new placement to represent what we call 8 since an 8 doesn't exist in Octal. So, after 7 is 10.\n
-    Just like how we used powers of ten in decimal and powers of two in binary, to determine the value of a number we will use powers of 8 since this is Base Eight. Consider the number 623 in base eight.
-    \n\n    If we want to convert to decimal, we need to multiply each place in the number by a power of 8 and then add the answers togehter. The first place will start with 8^0 * 3, then 8^1 * 2, then 8^2 * 6. 
-    \n  This gives us the statement 3 + 16 + 384 = 403. Thus, 623 in octal is 403 in decimal. /n/n Try converting decimal numbers in the box below to see what the octal will be!"
+    octallabel.Text <- "Octal is another number system with less symbols to use than our conventional number system.
+    \nOctal is fancy for Base Eight meaning eight symbols are used to represent all the quantities. They are 0, 1, 2, 3, 4, 5, 6, and 7.
+    \nWhen we count up one from the 7, we need a new placement to represent what we call 8 since an 8 doesn't exist in Octal. So, after 7 is 10.
+    \nJust like how we used powers of ten in decimal and powers of two in binary, to determine the value of a number we will use powers of 8 since this is Base Eight. Consider the number 623 in base eight.
+    \nIf we want to convert to decimal, we need to multiply each place in the number by a power of 8 and then add the answers togehter. The first place will start with 8^0 * 3, then 8^1 * 2, then 8^2 * 6. 
+    \nThis gives us the statement 3 + 16 + 384 = 403. Thus, 623 in octal is 403 in decimal.
+    \nTry converting decimal numbers in the box below to see what the octal will be!"
 
     form.Controls.Add(octallabel)
 
@@ -132,9 +177,9 @@ let octalButtonClicked evArgs sender =
     | 0 -> ""
     | _ -> octalconvert(s / 8) ^ int2String (s % 8)
 
-    let subOctalBtn = new Button(Width = 100, Height = 50, Location = new Point(225, 605), Text = "Dec -> Hex")
+    let subOctalBtn = new Button(Width = 100, Height = 50, Location = new Point(225, 530), Text = "Dec -> Octal")
     let subButtonClicked evArgs sender =
-        let convert = octalBox.Text |> int
+        let convert = octalBox.Text |> int  //handle exceptions here
         octalLabel.Text <- octalconvert convert
     ()
 
@@ -146,7 +191,51 @@ let octalButtonClicked evArgs sender =
 
 ()
 
+let binButtonClicked evArgs sender =
+    let formcontrol = [for x in 0..4 -> x]
+    let current = formcontrol.[0]
+    let form = new Form(Width = 650, Height = 650)
+    form.Visible <- true
+    form.Text <- "Bin lesson"
+
+    let binlabel = new Label(Width = 550, Height = 450, Location = new Point(50,25))
+
+    binlabel.Text <- "Binary numbers are the most common alternative base to decimal. Ever heard that computers \"speak\" in ones and zeros? Well, they kind of do!
+    \nSince digital logic relies on circuitry, it is helpful to represent numbers where each decimal only has two states: on or off--1 or 0. In fact, all digital computation can be reduced to zeros and ones.
+    \nComputer hardware is designed to perform differently depeding on what parts of the hardware are recieving current and which aren't.
+    \nIf you want to learn more about why binary is the basis for computer logic, check out Allan Turing and his \"Turing Machine\" or the digital logic behind TVs, microwaves, and digital clocks.
+    \nNow let's talk about how to make sense of binary numbers. As in the introduction, we have to think about the base of binary numbers: 2. Here's an example to get started:
+    \n 
+    "
+
+    form.Controls.Add(binlabel)
+
+    let binBox = new TextBox(Width = 100, Height = 50, Location = new Point(225,500))
+    let binLabel = new Label(Width = 100, Height = 50, Location = new Point(350,500))
+    binLabel.Text <- "0"
+
+    let rec binconvert s = 
+        match s with
+    | 0 -> ""
+    | _ -> binconvert(s / 2) ^ int2String (s % 2)
+
+    let subBinBtn = new Button(Width = 100, Height = 50, Location = new Point(225, 530), Text = "Dec -> Binary")
+    let subButtonClicked evArgs sender =
+        let convert = binBox.Text |> int //handle exceptions here
+        binLabel.Text <- binconvert convert
+    ()
+
+    subBinBtn.Click.Add(fun evArgs -> subButtonClicked evArgs hexbtn)
+
+    form.Controls.Add(binBox)
+    form.Controls.Add(binLabel)
+    form.Controls.Add(subBinBtn)
+
+()
+
+
 hexbtn.Click.Add(fun evArgs -> hexButtonClicked evArgs hexbtn)
+binbtn.Click.Add(fun evArgs -> binButtonClicked evArgs binbtn)
 octalbtn.Click.Add(fun evArgs -> octalButtonClicked evArgs octalbtn)
 
 form.Controls.Add(binbtn)
